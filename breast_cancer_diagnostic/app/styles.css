@@ -1,0 +1,15 @@
+
+.result {
+    padding: 1rem;
+    border-radius: 0.5rem;
+    color: white;
+    text-align: center;
+    font-weight: bold;
+    font-size: 20px;
+}
+.result.benign {
+    background-color: #01db4b; 
+}
+.result.malignant {
+    background-color: #ff4b4b; 
+}
