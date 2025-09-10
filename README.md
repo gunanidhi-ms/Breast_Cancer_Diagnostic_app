@@ -46,3 +46,5 @@ The workflow of a machine learning project (data → model → evaluation → de
 How to preprocess data and train a simple classification model.
 
 How to build dashboards to make machine learning models more interactive and user-friendly.
+
+📌 This repository is meant as a learning project and not for professional medical use.
