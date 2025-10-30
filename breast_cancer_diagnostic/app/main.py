@@ -3,9 +3,11 @@ import pickle
 import pandas as pd
 import plotly.graph_objects as go
 import numpy as np
+import plotly.express as px
+
 
 def get_clean_data():
-    data=pd.read_csv(r"D:\DJANGO_COURSE_2.xx (2)\DJANGO_COURSE_2.xx\python_learning\breast_cancer_diagnostic\data\data.csv")
+    data=pd.read_csv(r"D:\Breast_Cancer_Diagnostic_app\breast_cancer_diagnostic\data\data.csv")
     
     data=data.drop(columns=["Unnamed: 32","id"])
 
@@ -126,8 +128,8 @@ def get_radar_chart(input_data):
 
 def add_predictions(input_data):
 
-    model=pickle.load(open(r"D:\DJANGO_COURSE_2.xx (2)\DJANGO_COURSE_2.xx\python_learning\breast_cancer_diagnostic\model\model.pkl","rb"))
-    scaler=pickle.load(open(r"D:\DJANGO_COURSE_2.xx (2)\DJANGO_COURSE_2.xx\python_learning\breast_cancer_diagnostic\model\scaler.pkl","rb"))
+    model=pickle.load(open(r"D:\Breast_Cancer_Diagnostic_app\breast_cancer_diagnostic\model\model.pkl","rb"))
+    scaler=pickle.load(open(r"D:\Breast_Cancer_Diagnostic_app\breast_cancer_diagnostic\model\scaler.pkl","rb"))
 
     input_array=np.array(list(input_data.values())).reshape(1,-1)
     # st.write(input_array)
@@ -147,7 +149,96 @@ def add_predictions(input_data):
     st.write("probability of being malicious is:",model.predict_proba(input_array_scaled)[0][1])
     
     st.write("this app can assist medical professionals in making a diagnosis,but should not be used as a substitute for a professional diagnosis")
-    
+
+def get_correlation_heatmap():
+    data = get_clean_data()
+    corr = data.corr(numeric_only=True)
+
+    fig = px.imshow(
+        corr,
+        color_continuous_scale="RdBu_r",
+        title="Feature Correlation Heatmap",
+        labels=dict(color="Correlation"),
+        aspect="auto"
+    )
+
+    fig.update_layout(
+        width=1000,
+        height=800,
+        xaxis_title="Features",
+        yaxis_title="Features",
+        margin=dict(l=60, r=60, t=60, b=60)
+    )
+
+    return fig
+
+def plot_density_plot():
+    st.subheader("Feature Density Comparison")
+    data = get_clean_data()
+    # Dropdown to select feature
+    feature = st.selectbox(
+        "Select a feature to view its density distribution:",
+        [col for col in data.columns if col not in ["diagnosis"]]
+    )
+
+    # Create the density plot
+    fig = px.histogram(
+        data,
+        x=feature,
+        color="diagnosis",
+        marginal="violin",  # adds a small violin plot above
+        opacity=0.6,
+        barmode="overlay",
+        histnorm="density",
+        nbins=40,
+        color_discrete_map={0: 'blue', 1: 'red'},
+        title=f"Density Distribution of {feature.replace('_',' ').title()} (Benign vs Malignant)"
+    )
+
+    fig.update_layout(
+        xaxis_title=feature.replace("_", " ").title(),
+        yaxis_title="Density",
+        bargap=0.1,
+        height=600
+    )
+    return fig
+
+def plot_feature_importance():
+    st.subheader("Feature Importance (Model Explainability)")
+
+    # Load the model
+    model = pickle.load(open(r"D:\Breast_Cancer_Diagnostic_app\breast_cancer_diagnostic\model\model.pkl", "rb"))
+    data = get_clean_data()
+    feature_names = data.drop("diagnosis", axis=1).columns
+
+    # Get coefficients from logistic regression
+    importance = model.coef_[0]
+
+    # Create dataframe
+    imp_df = pd.DataFrame({
+        "Feature": feature_names,
+        "Importance": importance
+    }).sort_values(by="Importance", ascending=False)
+
+    # Plot bar chart
+    fig = px.bar(
+        imp_df,
+        x="Importance",
+        y="Feature",
+        orientation="h",
+        color="Importance",
+        color_continuous_scale="RdBu_r",
+        title="Feature Importance from Logistic Regression Model"
+    )
+
+    fig.update_layout(
+        xaxis_title="Coefficient Value (Impact on Malignancy)",
+        yaxis_title="Feature",
+        height=800
+    )
+
+    return fig
+
 def main():
     # print("we are going to build streamlit app here")
     st.set_page_config(
@@ -158,7 +249,7 @@ def main():
         )
     # st.write("hello world")
    
-    with open(r"D:\DJANGO_COURSE_2.xx (2)\DJANGO_COURSE_2.xx\python_learning\breast_cancer_diagnostic\app\styles.css") as f:
+    with open(r"D:\Breast_Cancer_Diagnostic_app\breast_cancer_diagnostic\app\styles.css") as f:
         st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
 
 
@@ -177,6 +268,20 @@ def main():
         st.plotly_chart(radar_chart)
     with col2:
         add_predictions(input_data)
+    
+    with st.container():
+        st.subheader("Feature Correlation Heatmap")
+        st.write("This shows how strongly each measurement is correlated with others.")
+        corr_chart = get_correlation_heatmap()
+        st.plotly_chart(corr_chart, use_container_width=True)
+    
+    with st.container():
+        density_plot = plot_density_plot()
+        st.plotly_chart(density_plot, use_container_width=True)
+
+    with st.container():
+        feature_importance_plot = plot_feature_importance()
+        st.plotly_chart(feature_importance_plot, use_container_width=True)
 
 if __name__=="__main__":
     main()
