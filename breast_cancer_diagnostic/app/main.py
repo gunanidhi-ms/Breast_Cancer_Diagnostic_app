@@ -283,5 +283,50 @@ def main():
         feature_importance_plot = plot_feature_importance()
         st.plotly_chart(feature_importance_plot, use_container_width=True)
 
+    with st.container():
+        data = get_clean_data()
+        st.header("Data Exploration")
+        st.write("This section displays the raw dataset and basic statistics.")
+
+        st.subheader("Raw Dataset")
+        st.dataframe(data.head())
+        st.subheader("Dataset Info")
+        st.write(f"*Rows:* {data.shape[0]}  |  *Columns:* {data.shape[1]}")
+        st.write("### Missing Values")
+        st.write(data.isnull().sum())
+
+        # Diagnosis Count
+        st.subheader("Class Distribution")
+        fig = px.pie(data, names="diagnosis", title="Diagnosis Distribution")
+        st.plotly_chart(fig, use_container_width=True)
+
+        
+        st.header("⚙ Data Cleaning & Preprocessing")
+    
+        st.markdown("""
+        ### ✔ Steps Performed:
+        - Removed unnecessary columns: *id, **Unnamed: 32*
+        - Converted diagnosis column:
+            - *M → 1 (Malignant)*
+            - *B → 0 (Benign)*
+        - Standardized numerical features using *StandardScaler*
+        - Split the data into *train/test* using 80/20 ratio
+        """)
+
+        cleaned_data = data.copy()
+        if "id" in cleaned_data.columns:
+            cleaned_data = cleaned_data.drop(columns=["id"])
+        if "Unnamed: 32" in cleaned_data.columns:
+            cleaned_data = cleaned_data.drop(columns=["Unnamed: 32"])
+
+        st.subheader("Cleaned Data Preview")
+        st.dataframe(cleaned_data.head())
+
+        st.subheader("Scaled Feature Example")
+        sample = cleaned_data.drop(columns=["diagnosis"]).head()
+        scaler = pickle.load(open(r"D:\Breast_Cancer_Diagnostic_app\breast_cancer_diagnostic\model\scaler.pkl","rb"))
+        scaled_sample = scaler.transform(sample)
+        st.write(pd.DataFrame(scaled_sample, columns=sample.columns).head())
+
 if __name__=="__main__":
     main()
